@@ -51,44 +51,25 @@
                                 <input type="text" name="location" class="form-control" value="{{ old('location') }}" placeholder="Village / Town, District" required>
                             </div>
                         </div>
-                        @if (($source ?? 'website') === 'qr')
-                            <div class="col-md-6">
-                                <label class="form-label">How did you find us? <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-bullhorn"></i></span>
-                                    <select name="how_found" class="form-select" required>
-                                        <option value="">Select an option</option>
-                                        @foreach (\App\Models\Enquiry::HOW_FOUND_OPTIONS as $option)
-                                            <option value="{{ $option }}" @selected(old('how_found') === $option)>{{ $option }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Product <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-box"></i></span>
-                                    <input type="text" name="product_name" class="form-control" value="{{ old('product_name') }}" placeholder="Product you are interested in" maxlength="255" required>
-                                </div>
-                            </div>
-                        @else
-                            <div class="col-md-6">
-                                <label class="form-label">Category <span class="text-danger">*</span></label>
-                                <select name="category_id" id="enqCategory" class="form-select" required>
-                                    <option value="">Select Category</option>
-                                    @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}" @selected(old('category_id', $product?->category_id) == $category->id)>{{ $category->name }}</option>
+                        <div class="col-md-6">
+                            <label class="form-label">How did you find us? <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-bullhorn"></i></span>
+                                <select name="how_found" class="form-select" required>
+                                    <option value="">Select an option</option>
+                                    @foreach (\App\Models\Enquiry::HOW_FOUND_OPTIONS as $option)
+                                        <option value="{{ $option }}" @selected(old('how_found') === $option)>{{ $option }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Product <span class="text-danger">*</span></label>
-                                <select name="product_id" id="enqProduct" class="form-select" required disabled
-                                        data-selected="{{ old('product_id', $product?->id) }}">
-                                    <option value="">Select a category first</option>
-                                </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Product <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-box"></i></span>
+                                <input type="text" name="product_name" class="form-control" value="{{ old('product_name', $product?->name) }}" placeholder="Product you are interested in" maxlength="255" required>
                             </div>
-                        @endif
+                        </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-danger btn-lg w-100">
                                 <i class="fa-solid fa-paper-plane me-2"></i>Submit Enquiry
@@ -101,36 +82,4 @@
     </div>
 </div>
 
-@php
-    $productData = $categories->mapWithKeys(fn ($c) => [$c->id => $c->products->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->values()]);
-@endphp
-<script>
-    (function () {
-        const productsByCategory = {!! json_encode($productData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
-        const cat = document.getElementById('enqCategory');
-        const prod = document.getElementById('enqProduct');
-        if (!cat || !prod) return;
-        let selected = prod.dataset.selected;
-
-        function fill() {
-            const list = productsByCategory[cat.value] || [];
-            prod.innerHTML = '';
-            if (!cat.value) {
-                prod.add(new Option('Select a category first', ''));
-                prod.disabled = true;
-                return;
-            }
-            prod.add(new Option(list.length ? 'Select Product' : 'No products in this category', ''));
-            list.forEach(p => {
-                const o = new Option(p.name, p.id);
-                if (String(p.id) === String(selected)) o.selected = true;
-                prod.add(o);
-            });
-            prod.disabled = list.length === 0;
-            selected = '';
-        }
-        cat.addEventListener('change', fill);
-        fill();
-    })();
-</script>
 @endsection

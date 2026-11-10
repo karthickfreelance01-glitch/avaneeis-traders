@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Let SSL (Let's Encrypt) verification work
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+
+    # Send every request into Laravel's public folder
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Block access to .env, .git and other hidden files
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

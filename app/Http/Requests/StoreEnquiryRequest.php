@@ -22,18 +22,10 @@ class StoreEnquiryRequest extends FormRequest
             'source' => ['nullable', 'in:website,qr'],
         ];
 
-        // QR form: "How found us" dropdown + free-text product
-        if ($this->input('source') === 'qr') {
-            return $common + [
-                'how_found' => ['required', Rule::in(Enquiry::HOW_FOUND_OPTIONS)],
-                'product_name' => ['required', 'string', 'max:255'],
-            ];
-        }
-
-        // Normal website form: category + product dropdowns (unchanged)
+        // Both forms (website + QR): "How found us" dropdown + free-text product
         return $common + [
-            'category_id' => ['required', 'exists:categories,id'],
-            'product_id' => ['required', 'exists:products,id'],
+            'how_found' => ['required', Rule::in(Enquiry::HOW_FOUND_OPTIONS)],
+            'product_name' => ['required', 'string', 'max:255'],
         ];
     }
 

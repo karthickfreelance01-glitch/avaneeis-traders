@@ -113,7 +113,8 @@ class ProductController extends Controller
         $data['city'] = $data['location'];
         unset($data['location']);
 
-        if (($data['source'] ?? 'website') === 'qr') {
+        // Website and QR forms now share the same fields
+        if (isset($data['product_name'])) {
             return $this->storeQrEnquiry($data);
         }
 
@@ -143,12 +144,13 @@ class ProductController extends Controller
     }
 
     /**
-     * QR enquiry: product is typed by the customer, plus "How did you find us?".
+     * Website & QR enquiry: product is typed by the customer, plus "How did you find us?".
      */
     protected function storeQrEnquiry(array $data)
     {
         $productName = trim($data['product_name']);
         $howFound = $data['how_found'];
+        $source = ($data['source'] ?? 'website') === 'qr' ? 'qr' : 'website';
         unset($data['product_name'], $data['how_found'], $data['source']);
 
         // Link to a catalogue product when the typed name matches one exactly
@@ -161,7 +163,7 @@ class ProductController extends Controller
         $data['product_category'] = $product?->category?->name;
 
         if (Schema::hasColumn('enquiries', 'source')) {
-            $data['source'] = 'qr';
+            $data['source'] = $source;
         }
         if (Schema::hasColumn('enquiries', 'how_found')) {
             $data['how_found'] = $howFound;
@@ -175,7 +177,7 @@ class ProductController extends Controller
 
         Enquiry::create($data);
 
-        return redirect()->route('enquiry.success', ['via' => 'qr'])->with('success', 'Your enquiry has been submitted successfully.');
+        return redirect()->route('enquiry.success', $source === 'qr' ? ['via' => 'qr'] : [])->with('success', 'Your enquiry has been submitted successfully.');
     }
 
     public function success()
