@@ -16,49 +16,130 @@
     $settings = $settings ?? App\Models\CompanySetting::allValues();
 @endphp
 
-{{-- ================= HERO ================= --}}
-<section class="hero-modern">
-    <span class="blob blob-1"></span>
-    <span class="blob blob-2"></span>
-    <span class="blob blob-3"></span>
-    <div class="container position-relative">
-        <div class="row align-items-center g-5">
-            <div class="col-lg-7">
-                <span class="hero-chip anim-up" style="--d:.1s"><i class="fa-solid fa-award me-2"></i>Trusted since 2018</span>
-                <h1 class="hero-title anim-up" style="--d:.25s">
-                    Complete <span class="text-gradient">Poultry Farm</span><br>Equipment Solutions
-                </h1>
-                <p class="hero-sub anim-up" style="--d:.4s">
-                    Broiler <span class="dot"></span> Layer <span class="dot"></span> Breeder Farms
-                </p>
-                <p class="hero-text anim-up" style="--d:.5s">
-                    Quality equipment, practical automation, reliable installation and after-sales service — everything your farm needs to grow.
-                </p>
-                <div class="d-flex gap-3 flex-wrap anim-up" style="--d:.65s">
-                    <a href="{{ route('enquiry.form') }}" class="btn btn-danger btn-lg btn-glow"><i class="fa-solid fa-paper-plane me-2"></i>Request a Quote</a>
-                    <a href="{{ route('products.index') }}" class="btn btn-outline-light btn-lg">Explore Products <i class="fa-solid fa-arrow-right ms-2"></i></a>
-                </div>
-                <div class="hero-stats anim-up" style="--d:.8s">
-                    <div><b data-count="2018" data-plain="1">2018</b><span>Established</span></div>
-                    <div><b data-count="500" data-suffix="+">500+</b><span>Happy farmers</span></div>
-                    <div><b data-count="1000" data-suffix="+">1000+</b><span>Installations</span></div>
-                </div>
+{{-- ================= HERO SLIDER ================= --}}
+@php
+    $heroSlides = [
+        ['img' => 'assets/images/hero/hero-cleaning-robot.jpg', 'alt' => 'X6 Livestock Manure Channels Cleaning Robot', 'link' => route('products.index')],
+        ['img' => 'assets/images/hero/hero-climate-control.jpg', 'alt' => 'Climate Control Solutions for Modern Poultry Farms', 'link' => route('products.index')],
+    ];
+@endphp
+<style>
+    .hs { position: relative; overflow: hidden; background: #080C4A; padding: 16px 0 16px; isolation: isolate; }
+    .hs-bg { position: absolute; inset: -40px; z-index: -2; background-size: cover; background-position: center; filter: blur(38px) saturate(1.2) brightness(.55);
+        opacity: 0; transition: opacity 1.2s ease; }
+    .hs-bg.is-on { opacity: 1; }
+    .hs::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at center, transparent 40%, rgba(8,12,74,.75) 100%); }
+    .hs-stage { position: relative; margin: 0 auto; width: min(80%, 1440px); aspect-ratio: 3 / 2;
+        border-radius: 14px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); background: #0E1471; }
+    .hs-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 1s ease, visibility 0s linear 1s; }
+    .hs-slide.is-active { opacity: 1; visibility: visible; transition: opacity 1s ease; z-index: 1; }
+    .hs-slide a { display: block; width: 100%; height: 100%; }
+    .hs-slide img { width: 100%; height: 100%; object-fit: contain; display: block; transform: scale(1.08) translateY(10px); filter: blur(4px); }
+    .hs-slide.is-active img { animation: hsIn 1.4s cubic-bezier(.2,.7,.2,1) forwards; }
+    @keyframes hsIn { to { transform: none; filter: none; } }
+    /* light sweep across the poster when it appears */
+    .hs-slide::after { content: ''; position: absolute; top: 0; bottom: 0; width: 35%; left: -45%; pointer-events: none;
+        background: linear-gradient(105deg, transparent, rgba(255,255,255,.28), transparent); transform: skewX(-12deg); }
+    .hs-slide.is-active::after { animation: hsShine 1.6s ease .9s forwards; }
+    @keyframes hsShine { to { left: 120%; } }
+
+    .hs-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 46px; height: 46px; border-radius: 50%; border: 0;
+        background: rgba(255,255,255,.88); color: #0E1471; display: grid; place-items: center; box-shadow: 0 8px 20px rgba(0,0,0,.25);
+        opacity: 0; transition: opacity .3s ease, transform .3s ease, background .2s; }
+    .hs-stage:hover .hs-nav, .hs-nav:focus-visible { opacity: 1; }
+    .hs-nav:hover { background: #C90C0C; color: #fff; }
+    .hs-prev { left: 14px; } .hs-next { right: 14px; }
+
+    .hs-dots { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
+    .hs-dot { position: relative; width: 56px; height: 5px; border: 0; padding: 0; border-radius: 5px; background: rgba(255,255,255,.25); overflow: hidden; cursor: pointer; }
+    .hs-dot span { position: absolute; inset: 0; width: 0; background: linear-gradient(90deg, #fff, #ff4d4d); border-radius: 5px; }
+    .hs-dot.is-active span { animation: hsProg var(--hs-time, 6s) linear forwards; }
+    .hs.is-paused .hs-dot.is-active span { animation-play-state: paused; }
+    @keyframes hsProg { to { width: 100%; } }
+
+    @media (max-width: 767px) {
+        .hs { padding: 10px 0 12px; }
+        .hs-stage { width: calc(100% - 20px); border-radius: 10px; }
+        .hs-nav { display: none; }
+        .hs-dot { width: 36px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .hs-slide img, .hs-slide.is-active img { animation: none; transform: none; filter: none; }
+        .hs-slide::after { display: none; }
+    }
+</style>
+
+<section class="hs" id="heroSlider" aria-roledescription="carousel" aria-label="Featured products">
+    @foreach ($heroSlides as $i => $slide)
+        <div class="hs-bg {{ $i === 0 ? 'is-on' : '' }}" style="background-image: url('{{ asset($slide['img']) }}')"></div>
+    @endforeach
+
+    <div class="hs-stage">
+        @foreach ($heroSlides as $i => $slide)
+            <div class="hs-slide {{ $i === 0 ? 'is-active' : '' }}" role="group" aria-roledescription="slide" aria-label="{{ $i + 1 }} of {{ count($heroSlides) }}">
+                <a href="{{ $slide['link'] }}">
+                    <img src="{{ asset($slide['img']) }}" alt="{{ $slide['alt'] }}" width="1536" height="1024" @if ($i) loading="lazy" @else fetchpriority="high" @endif>
+                </a>
             </div>
-            <div class="col-lg-5 d-none d-lg-block">
-                <div class="hero-visual anim-zoom" style="--d:.3s">
-                    <div class="ring"></div>
-                    <img src="{{ asset('assets/images/logo-chicken-hero.jpg') }}" alt="AVANEEIS TRADERS">
-                    <div class="float-card fc-1"><i class="fa-solid fa-droplet"></i> Drinking Systems</div>
-                    <div class="float-card fc-2"><i class="fa-solid fa-wheat-awn"></i> Feeding Systems</div>
-                    <div class="float-card fc-3"><i class="fa-solid fa-fan"></i> Climate Control</div>
-                </div>
-            </div>
-        </div>
+        @endforeach
+        @if (count($heroSlides) > 1)
+            <button class="hs-nav hs-prev" type="button" aria-label="Previous slide"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="hs-nav hs-next" type="button" aria-label="Next slide"><i class="fa-solid fa-chevron-right"></i></button>
+        @endif
     </div>
-    <svg class="hero-wave" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0,64 C240,120 480,0 720,48 C960,96 1200,24 1440,64 L1440,120 L0,120 Z"></path>
-    </svg>
+
+    @if (count($heroSlides) > 1)
+        <div class="hs-dots">
+            @foreach ($heroSlides as $i => $slide)
+                <button class="hs-dot {{ $i === 0 ? 'is-active' : '' }}" type="button" aria-label="Go to slide {{ $i + 1 }}"><span></span></button>
+            @endforeach
+        </div>
+    @endif
 </section>
+
+<script>
+(function () {
+    const root = document.getElementById('heroSlider');
+    const slides = root.querySelectorAll('.hs-slide');
+    if (slides.length < 2) return;
+    const bgs = root.querySelectorAll('.hs-bg');
+    const dots = root.querySelectorAll('.hs-dot');
+    const TIME = 6000;
+    root.style.setProperty('--hs-time', TIME + 'ms');
+    let index = 0, timer = null, remaining = TIME, startedAt = 0;
+
+    function go(n) {
+        slides[index].classList.remove('is-active'); bgs[index].classList.remove('is-on'); dots[index].classList.remove('is-active');
+        index = (n + slides.length) % slides.length;
+        // restart the CSS animations
+        [slides[index], dots[index]].forEach(el => { void el.offsetWidth; });
+        slides[index].classList.add('is-active'); bgs[index].classList.add('is-on'); dots[index].classList.add('is-active');
+        remaining = TIME; schedule();
+    }
+    function schedule() { clearTimeout(timer); startedAt = Date.now(); timer = setTimeout(() => go(index + 1), remaining); }
+    function pause() { if (root.classList.contains('is-paused')) return; clearTimeout(timer); remaining -= Date.now() - startedAt; root.classList.add('is-paused'); }
+    function resume() { if (!root.classList.contains('is-paused')) return; root.classList.remove('is-paused'); schedule(); }
+
+    root.querySelector('.hs-prev').addEventListener('click', () => go(index - 1));
+    root.querySelector('.hs-next').addEventListener('click', () => go(index + 1));
+    dots.forEach((d, i) => d.addEventListener('click', () => i !== index && go(i)));
+    const stage = root.querySelector('.hs-stage');
+    stage.addEventListener('mouseenter', pause);
+    stage.addEventListener('mouseleave', resume);
+    document.addEventListener('visibilitychange', () => document.hidden ? pause() : resume());
+
+    // swipe on phones
+    let x0 = null;
+    stage.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    stage.addEventListener('touchend', e => {
+        if (x0 === null) return;
+        const dx = e.changedTouches[0].clientX - x0; x0 = null;
+        if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1));
+    });
+
+    schedule();
+})();
+</script>
 
 {{-- ================= MARQUEE ================= --}}
 @if ($categories->count())

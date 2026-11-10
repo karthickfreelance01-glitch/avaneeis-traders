@@ -68,6 +68,14 @@
     .qrp-search i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9aa0b4; }
     .qrp-search input { padding-left: 40px; border-radius: 12px; height: 44px; }
 
+    .qrp-filter { padding: 18px 20px; height: auto; }
+    .qrp-filter .form-label { color: #6B7080; font-weight: 500; }
+    .qrp-input { border-radius: 12px; height: 44px; }
+    .qrp-filter .btn { border-radius: 12px; height: 44px; display: inline-flex; align-items: center; }
+    .qrp-quick .btn { border-radius: 0; }
+    .qrp-quick .btn:first-child { border-radius: 12px 0 0 12px; }
+    .qrp-quick .btn:last-child { border-radius: 0 12px 12px 0; }
+
     .qrp-table { border-collapse: separate; border-spacing: 0 8px; }
     .qrp-table thead th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: #6B7080; border: 0; font-weight: 600; padding: 4px 14px; }
     .qrp-table tbody tr { background: #fff; box-shadow: 0 4px 14px rgba(14,20,113,.05); transition: transform .2s ease, box-shadow .2s ease; animation: qrpRow .5s ease both; }
@@ -203,18 +211,78 @@
 </div>
 
 {{-- ============ FILTERS ============ --}}
-<div class="d-flex flex-column flex-lg-row gap-3 justify-content-between align-items-lg-center mb-2">
+@php
+    $keep = array_filter(request()->only(['search', 'how_found', 'product', 'location', 'from', 'to']), fn ($v) => $v !== null && $v !== '');
+    $exportQuery = array_filter(request()->only(['search', 'status', 'how_found', 'product', 'location', 'from', 'to']), fn ($v) => $v !== null && $v !== '');
+@endphp
+<div class="qrp-card qrp-filter mb-3">
+    <form method="GET" action="{{ route('admin.enquiries.qr') }}" id="qrFilterForm">
+        @if (request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small mb-1">Search</label>
+                <div class="qrp-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search name, phone, place, product…">
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <label class="form-label small mb-1">From date</label>
+                <input type="date" name="from" value="{{ request('from') }}" class="form-control qrp-input">
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <label class="form-label small mb-1">To date</label>
+                <input type="date" name="to" value="{{ request('to') }}" class="form-control qrp-input">
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small mb-1">How found us</label>
+                <select name="how_found" class="form-select qrp-input" @disabled(! $hasHowFound)>
+                    <option value="">All sources</option>
+                    @foreach ($howFoundOptions as $option)
+                        <option value="{{ $option }}" @selected(request('how_found') === $option)>{{ $option }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small mb-1">Product</label>
+                <input type="text" name="product" value="{{ request('product') }}" class="form-control qrp-input" placeholder="Product name">
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small mb-1">Location</label>
+                <input type="text" name="location" value="{{ request('location') }}" class="form-control qrp-input" placeholder="Town / District">
+            </div>
+            <div class="col-lg-6">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <div class="btn-group qrp-quick" role="group" aria-label="Quick date range">
+                        <button type="button" class="btn btn-outline-primary" data-range="0">Today</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="6">7 days</button>
+                        <button type="button" class="btn btn-outline-primary" data-range="29">30 days</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter me-1"></i>Apply</button>
+                    @if ($filterCount || request('status'))
+                        <a href="{{ route('admin.enquiries.qr') }}" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark me-1"></i>Reset</a>
+                    @endif
+                    <a href="{{ route('admin.enquiries.qr.excel', $exportQuery) }}" class="btn btn-success"><i class="fa-solid fa-file-excel me-1"></i>Excel</a>
+                    <a href="{{ route('admin.enquiries.qr.pdf', $exportQuery) }}" target="_blank" class="btn btn-danger"><i class="fa-solid fa-file-pdf me-1"></i>PDF</a>
+                </div>
+            </div>
+        </div>
+    </form>
+    @unless ($hasHowFound)
+        <div class="small text-danger mt-2"><i class="fa-solid fa-circle-exclamation me-1"></i>Run <code>php artisan migrate</code> to enable the "How found us" field.</div>
+    @endunless
+</div>
+
+<div class="d-flex flex-column flex-lg-row gap-2 justify-content-between align-items-lg-center mb-2">
     <div class="qrp-tabs">
-        <a href="{{ route('admin.enquiries.qr', array_filter(['search' => request('search')])) }}" class="{{ request('status') ? '' : 'active' }}">All<span class="c">{{ $stats['total'] }}</span></a>
+        <a href="{{ route('admin.enquiries.qr', $keep) }}" class="{{ request('status') ? '' : 'active' }}">All<span class="c">{{ $stats['total'] }}</span></a>
         @foreach ($statuses as $st)
-            <a href="{{ route('admin.enquiries.qr', array_filter(['status' => $st, 'search' => request('search')])) }}" class="{{ request('status') === $st ? 'active' : '' }}">{{ $st }}<span class="c">{{ $statusCounts[$st] }}</span></a>
+            <a href="{{ route('admin.enquiries.qr', array_merge($keep, ['status' => $st])) }}" class="{{ request('status') === $st ? 'active' : '' }}">{{ $st }}<span class="c">{{ $statusCounts[$st] }}</span></a>
         @endforeach
     </div>
-    <form method="GET" class="qrp-search" style="min-width: 280px;">
-        @if (request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="search" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search name, phone, place, product…">
-    </form>
+    @if ($filterCount)
+        <small class="text-muted text-nowrap"><i class="fa-solid fa-filter me-1"></i>{{ $enquiries->total() }} {{ \Illuminate\Support\Str::plural('result', $enquiries->total()) }} for current filters</small>
+    @endif
 </div>
 
 {{-- ============ LIST ============ --}}
@@ -227,6 +295,7 @@
                     <th>Contact</th>
                     <th>Location</th>
                     <th>Interested in</th>
+                    <th>Found us via</th>
                     <th>Received</th>
                     <th>Status</th>
                     <th class="text-end">Actions</th>
@@ -259,6 +328,13 @@
                         <td data-label="Interested in">
                             <div class="fw-medium">{{ $enquiry->interested_product ?? $enquiry->product->name ?? '—' }}</div>
                             <span class="qrp-chip">{{ $enquiry->product_category ?? $enquiry->category->name ?? 'General' }}</span>
+                        </td>
+                        <td data-label="Found us via">
+                            @if ($enquiry->how_found)
+                                <span class="qrp-chip"><i class="fa-solid fa-bullhorn me-1"></i>{{ $enquiry->how_found }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
                         </td>
                         <td data-label="Received" class="text-nowrap">
                             <div>{{ $enquiry->created_at?->diffForHumans() }}</div>
@@ -294,9 +370,9 @@
 @else
     <div class="qrp-card qrp-empty">
         <div class="ic"><i class="fa-solid fa-qrcode"></i></div>
-        @if (request('search') || request('status'))
+        @if ($filterCount || request('status'))
             <h5 class="fw-bold">No matching enquiries</h5>
-            <p class="text-muted">Try a different search or status.</p>
+            <p class="text-muted">Try a different search, date range or status.</p>
             <a href="{{ route('admin.enquiries.qr') }}" class="btn btn-outline-primary">Clear filters</a>
         @else
             <h5 class="fw-bold">No QR enquiries yet</h5>
@@ -307,6 +383,20 @@
 @endif
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function () {
+    /* Quick date range buttons */
+    const f = document.getElementById('qrFilterForm');
+    const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    f?.querySelectorAll('[data-range]').forEach(btn => btn.addEventListener('click', () => {
+        const to = new Date(), from = new Date();
+        from.setDate(to.getDate() - Number(btn.dataset.range));
+        f.elements.from.value = iso(from);
+        f.elements.to.value = iso(to);
+        f.submit();
+    }));
+})();
+</script>
 <script>
 (function () {
     const box = document.getElementById('qrcode');

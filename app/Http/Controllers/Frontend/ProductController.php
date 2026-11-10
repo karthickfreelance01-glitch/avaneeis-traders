@@ -113,6 +113,10 @@ class ProductController extends Controller
         $data['city'] = $data['location'];
         unset($data['location']);
 
+        if (($data['source'] ?? 'website') === 'qr') {
+            return $this->storeQrEnquiry($data);
+        }
+
         $category = Category::find($data['category_id']);
         $product = Product::where('id', $data['product_id'])->where('category_id', $data['category_id'])->first();
 
@@ -136,6 +140,42 @@ class ProductController extends Controller
         Enquiry::create($data);
 
         return redirect()->route('enquiry.success', $source === 'qr' ? ['via' => 'qr'] : [])->with('success', 'Your enquiry has been submitted successfully.');
+    }
+
+    /**
+     * QR enquiry: product is typed by the customer, plus "How did you find us?".
+     */
+    protected function storeQrEnquiry(array $data)
+    {
+        $productName = trim($data['product_name']);
+        $howFound = $data['how_found'];
+        unset($data['product_name'], $data['how_found'], $data['source']);
+
+        // Link to a catalogue product when the typed name matches one exactly
+        $product = Product::whereRaw('LOWER(name) = ?', [mb_strtolower($productName)])->first();
+
+        $data['interested_product'] = $productName;
+        $data['product_id'] = $product?->id;
+        $data['category_id'] = $product?->category_id;
+        $data['subcategory_id'] = $product?->subcategory_id;
+        $data['product_category'] = $product?->category?->name;
+
+        if (Schema::hasColumn('enquiries', 'source')) {
+            $data['source'] = 'qr';
+        }
+        if (Schema::hasColumn('enquiries', 'how_found')) {
+            $data['how_found'] = $howFound;
+        } else {
+            // Migration not run yet: keep the answer so it is not lost
+            $data['message'] = 'How found us: '.$howFound;
+        }
+
+        $data['enquiry_reference'] = 'AV-'.strtoupper(Str::random(8));
+        $data['status'] = 'New';
+
+        Enquiry::create($data);
+
+        return redirect()->route('enquiry.success', ['via' => 'qr'])->with('success', 'Your enquiry has been submitted successfully.');
     }
 
     public function success()

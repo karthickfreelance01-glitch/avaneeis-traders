@@ -9,6 +9,19 @@ class Enquiry extends Model
 {
     use HasFactory;
 
+    /** Options for "How did you find us?" on the QR enquiry form. */
+    public const HOW_FOUND_OPTIONS = [
+        'Poultry expo - Coimbatore',
+        'Poultry expo - Hyderabad',
+        'Poultry expo - Trichy',
+        'Agri expo - Coimbatore',
+        'Agri expo - Hyderabad',
+        'Agri expo - Trichy',
+        'Reference',
+        'Website',
+        'Ads',
+    ];
+
     protected $fillable = [
         'category_id',
         'subcategory_id',
@@ -27,6 +40,7 @@ class Enquiry extends Model
         'enquiry_reference',
         'status',
         'source',
+        'how_found',
         'notes',
     ];
 

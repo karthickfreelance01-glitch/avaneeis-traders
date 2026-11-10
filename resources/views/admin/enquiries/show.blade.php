@@ -20,6 +20,9 @@
                 <tr><th>Category</th><td>{{ $enquiry->product_category ?? $enquiry->category->name ?? 'N/A' }}</td></tr>
                 <tr><th>Quantity</th><td>{{ $enquiry->quantity ?? 'N/A' }}</td></tr>
                 <tr><th>Source</th><td>@if(($enquiry->source ?? 'website') === 'qr')<span class="badge badge-source-qr"><i class="fa-solid fa-qrcode me-1"></i>QR Scan</span>@else<span class="badge badge-source-website">Website</span>@endif</td></tr>
+                @if ($enquiry->how_found)
+                    <tr><th>How found us</th><td>{{ $enquiry->how_found }}</td></tr>
+                @endif
                 <tr><th>Date</th><td>{{ $enquiry->created_at?->format('d M Y, h:i A') }}</td></tr>
                 <tr><th>Status</th><td><span class="badge bg-primary">{{ $enquiry->status }}</span></td></tr>
                 <tr><th>Message</th><td>{{ $enquiry->message }}</td></tr>

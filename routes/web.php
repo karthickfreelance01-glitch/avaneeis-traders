@@ -54,6 +54,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('/subcategories', SubcategoryController::class);
         Route::resource('/products', AdminProductController::class);
         Route::get('/qr-enquiries', [EnquiryController::class, 'qr'])->name('enquiries.qr');
+        Route::get('/qr-enquiries/export/excel', [EnquiryController::class, 'qrExportExcel'])->name('enquiries.qr.excel');
+        Route::get('/qr-enquiries/export/pdf', [EnquiryController::class, 'qrExportPdf'])->name('enquiries.qr.pdf');
         Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries.index');
         Route::get('/enquiries/{enquiry}', [EnquiryController::class, 'show'])->name('enquiries.show');
         Route::post('/enquiries/{enquiry}/status', [EnquiryController::class, 'updateStatus'])->name('enquiries.updateStatus');
